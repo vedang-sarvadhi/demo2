@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz App</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body class="min-h-screen flex items-center justify-center p-4">
+    <!-- Login Page -->
+    <div id="loginDashboard" class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full card-hover">
+      <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Quiz App</h1>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+          <input
+            type="text"
+            id="name"
+            required
+            placeholder="Enter your full name"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+          />
+        </div>
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <input
+            type="email"
+            id="email"
+            required
+            placeholder="Enter your email"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+          />
+        </div>
+        <button
+          type="submit"
+          id="loginBtn"
+          class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-primary-700 transition-all font-semibold shadow-lg hover:shadow-xl"
+        >
+          Start Quiz
+        </button>
+      </form>
+    </div>
+
+    <!-- Camera Modal -->
+    <div
+      id="cameraModal"
+      class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full hidden card-hover"
+    >
+      <h2 class="text-2xl font-bold text-center mb-4 text-gray-800">Camera Access Required</h2>
+      <p class="text-gray-600 mb-6 text-center">
+        This quiz uses face detection. Please allow camera access to continue.
+      </p>
+      <button
+        id="allowCamera"
+        class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-primary-700 transition-all font-semibold shadow-lg hover:shadow-xl"
+      >
+        Allow Camera Access
+      </button>
+    </div>
+
+    <!-- Quiz Page -->
+    <div
+      id="quizPage"
+      class="bg-white p-8 rounded-xl shadow-2xl max-w-2xl w-full hidden card-hover"
+    >
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">Web Development Quiz</h2>
+      <div class="flex justify-between items-center mb-4">
+        <span class="text-gray-600">Question <span id="questionNumber">1</span> of 5</span>
+        <span class="text-lg font-semibold text-primary-600">Time: <span id="timer">10</span></span>
+      </div>
+      <div class="video-container">
+        <video id="video" autoplay muted></video>
+        <canvas id="faceCanvas"></canvas>
+      </div>
+      <div id="faceNotDetected" class="face-warning hidden">
+        ⚠️ WARNING: You are not looking at the screen! Please look directly at the camera.
+      </div>
+      <div id="question" class="text-lg font-semibold my-6 text-gray-800"></div>
+      <div id="answers" class="space-y-3 mb-6"></div>
+      <div class="flex justify-between">
+        <button
+          id="skipBtn"
+          class="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition-all font-semibold shadow-lg hover:shadow-xl"
+        >
+          Skip Question
+        </button>
+        <button
+          id="nextBtn"
+          disabled
+          class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next Question
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Page -->
+    <div
+      id="resultsPage"
+      class="bg-white p-8 rounded-xl shadow-2xl max-w-2xl w-full hidden card-hover"
+    >
+      <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">Quiz Completed!</h2>
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="text-center p-4 bg-green-100 rounded-xl border border-green-200">
+          <div id="scoreDisplay" class="text-2xl font-bold text-green-600">0</div>
+          <div class="text-sm text-gray-600">Correct</div>
+        </div>
+        <div class="text-center p-4 bg-red-100 rounded-xl border border-red-200">
+          <div id="incorrectDisplay" class="text-2xl font-bold text-red-600">0</div>
+          <div class="text-sm text-gray-600">Incorrect</div>
+        </div>
+        <div class="text-center p-4 bg-yellow-100 rounded-xl border border-yellow-200">
+          <div id="skippedDisplay" class="text-2xl font-bold text-yellow-600">0</div>
+          <div class="text-sm text-gray-600">Skipped</div>
+        </div>
+      </div>
+      <div class="text-center mb-6">
+        <div id="percentageScore" class="text-4xl font-bold text-primary-600">0%</div>
+        <div id="gradeText" class="text-lg text-gray-600">Keep practicing!</div>
+      </div>
+      <div class="flex justify-center space-x-4">
+        <button
+          id="downloadBtn"
+          class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-all font-semibold shadow-lg hover:shadow-xl"
+        >
+          Download Result Card
+        </button>
+        <button
+          id="retakeBtn"
+          class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-all font-semibold shadow-lg hover:shadow-xl"
+        >
+          Retake Quiz
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden Result Card for Download -->
+    <div
+      id="resultCard"
+      class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full hidden"
+      style="position: absolute; left: -9999px"
+    >
+      <h3 class="text-2xl font-bold text-center mb-4">Quiz Result Card</h3>
+      <div class="text-center text-gray-600 mb-6">Simple Quiz App</div>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <span class="font-semibold">Name:</span> <span id="cardName"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Email:</span> <span id="cardEmail"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Date:</span> <span id="cardDate"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Score:</span>
+          <span id="cardScore" class="font-bold text-green-600"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Percentage:</span>
+          <span id="cardPercentage" class="font-bold text-blue-600"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-semibold">Grade:</span> <span id="cardGrade" class="font-bold"></span>
+        </div>
+      </div>
+      <div class="mt-6 p-4 bg-gray-50 rounded">
+        <h4 class="font-semibold mb-2">Performance Summary</h4>
+        <div class="text-sm space-y-1">
+          <div>Correct: <span id="cardCorrect" class="font-semibold text-green-600"></span></div>
+          <div>Incorrect: <span id="cardIncorrect" class="font-semibold text-red-600"></span></div>
+          <div>Skipped: <span id="cardSkipped" class="font-semibold text-yellow-600"></span></div>
+        </div>
+      </div>
+      <div class="mt-4 text-center text-xs text-gray-500">Generated by Simple Quiz App</div>
+    </div>
+
+    <!-- External Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Application Script -->
+    <script src="js/app.js"></script>
+  </body>
+</html>
