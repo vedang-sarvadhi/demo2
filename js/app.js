@@ -37,7 +37,7 @@ const questions = [
   }
 ];
 
-// Variables to track quiz state
+// Variables
 let currentQuestion = 0;
 let score = 0;
 let skipped = 0;
@@ -46,8 +46,8 @@ let timeLeft = 10;
 let selectedAnswer = null;
 let faceMesh;
 let camera;
+let faceDetectionActive = false;
 
-// Get HTML elements
 const loginPage = document.getElementById('loginDashboard');
 const quizPage = document.getElementById('quizPage');
 const resultsPage = document.getElementById('resultsPage');
@@ -67,7 +67,6 @@ document.addEventListener('DOMContentLoaded', function () {
   setupFaceDetection();
 });
 
-// Setup button click handlers
 function setupEventListeners() {
   // Login form
   loginForm.addEventListener('submit', handleLogin);
@@ -84,7 +83,7 @@ function setupEventListeners() {
   document.getElementById('retakeBtn').addEventListener('click', retakeQuiz);
 }
 
-// Handle user login
+// user login
 function handleLogin(e) {
   e.preventDefault();
 
@@ -128,6 +127,7 @@ async function startCamera() {
       quizPage.classList.remove('hidden');
       loadQuestion();
       startTimer();
+      startFaceDetectionLoop();
     });
   } catch (error) {
     console.error('Camera error:', error);
@@ -274,7 +274,6 @@ function displayResults() {
   document.getElementById('skippedDisplay').textContent = skipped;
   document.getElementById('percentageScore').textContent = percentage + '%';
 
-  // Set grade text
   let gradeText = 'Keep practicing!';
   if (percentage >= 90) gradeText = 'Excellent work!';
   else if (percentage >= 80) gradeText = 'Great job!';
@@ -288,7 +287,6 @@ function displayResults() {
 async function downloadResults() {
   const resultCard = document.getElementById('resultCard');
 
-  // Fill in result card data
   document.getElementById('cardName').textContent = window.userData.name;
   document.getElementById('cardEmail').textContent = window.userData.email;
   document.getElementById('cardDate').textContent = new Date().toLocaleDateString();
@@ -329,8 +327,7 @@ async function downloadResults() {
     link.click();
   } catch (error) {
     console.error('Download error:', error);
-    
-    // If oklch error, try with different settings
+
     if (error.message.includes('oklch')) {
       try {
         console.log('Retrying with legacy color settings...');
@@ -343,19 +340,22 @@ async function downloadResults() {
           ignoreElements: (element) => {
             // Ignore elements with problematic styles
             const style = window.getComputedStyle(element);
-            return style.color.includes('oklch') || 
-                   style.backgroundColor.includes('oklch') ||
-                   style.borderColor.includes('oklch');
+            return (
+              style.color.includes('oklch') ||
+              style.backgroundColor.includes('oklch') ||
+              style.borderColor.includes('oklch')
+            );
           }
         });
-
         const link = document.createElement('a');
         link.download = window.userData.name + '_quiz_result.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
       } catch (retryError) {
         console.error('Retry failed:', retryError);
-        alert('Failed to generate result card due to unsupported color format. Please try again later.');
+        alert(
+          'Failed to generate result card due to unsupported color format. Please try again later.'
+        );
       }
     } else {
       alert('Failed to generate result card. Please try again.');
@@ -365,7 +365,6 @@ async function downloadResults() {
   }
 }
 
-// Retake quiz
 function retakeQuiz() {
   currentQuestion = 0;
   score = 0;
@@ -406,46 +405,54 @@ function setupFaceDetection() {
   }
 }
 
+function startFaceDetectionLoop() {
+  if (!faceDetectionActive) {
+    faceDetectionActive = true;
+    requestAnimationFrame(processFaceFrame);
+  }
+}
+
+async function processFaceFrame() {
+  if (video.readyState >= 2 && faceMesh) {
+    await faceMesh.send({ image: video });
+  }
+  if (faceDetectionActive) {
+    requestAnimationFrame(processFaceFrame);
+  }
+}
+
 // Handle face detection results
 function onFaceResults(results) {
+  console.log("onFaceResults called", results);
   const ctx = faceCanvas.getContext('2d');
 
-  // Clear canvas
   ctx.clearRect(0, 0, faceCanvas.width, faceCanvas.height);
 
   if (results.image) {
     ctx.drawImage(results.image, 0, 0, faceCanvas.width, faceCanvas.height);
   }
 
-  // Check if face is detected and looking straight
   if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
     const landmarks = results.multiFaceLandmarks[0];
 
-    // More comprehensive check for looking direction
     const nose = landmarks[1];
     const leftEye = landmarks[133];
     const rightEye = landmarks[362];
     const leftMouth = landmarks[61];
     const rightMouth = landmarks[291];
 
-    // Calculate face center and orientation
     const faceCenter = (leftEye.x + rightEye.x) / 2;
     const mouthCenter = (leftMouth.x + rightMouth.x) / 2;
 
-    // Check horizontal deviation (looking left/right)
     const horizontalDeviation = Math.abs(nose.x - faceCenter);
 
-    // Check vertical deviation (looking up/down)
     const verticalDeviation = Math.abs(nose.y - mouthCenter);
 
-    // Check if eyes are roughly at same level (not tilted head)
     const eyeLevelDiff = Math.abs(leftEye.y - rightEye.y);
 
-    // More sensitive thresholds - make it very sensitive
     const isLookingAway =
-      horizontalDeviation > 0.03 || verticalDeviation > 0.08 || eyeLevelDiff > 0.03;
+      horizontalDeviation > 0.04 || verticalDeviation > 0.08 || eyeLevelDiff > 0.03;
 
-    // Debug logging (remove this later)
     console.log('Face detection:', {
       horizontalDeviation: horizontalDeviation.toFixed(3),
       verticalDeviation: verticalDeviation.toFixed(3),
